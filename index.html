@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Dashboard v0.0.8</title>
+    <title>Dev Dashboard v0.2.1</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -136,6 +136,12 @@
         }
         .btn-icon:hover { border-color: #6366f1; }
         .btn-block { width: 100%; }
+        .btn-whatsapp {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid #22c55e;
+        }
+        .btn-whatsapp:hover { background: #22c55e; color: white; }
         
         .stats-bar {
             display: flex;
@@ -174,7 +180,7 @@
         }
         .content-header h2 { font-size: 1.2rem; }
         
-        .filters { display: flex; gap: 0.5rem; }
+        .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .chip {
             padding: 0.4rem 1rem;
             background: #151520;
@@ -218,6 +224,13 @@
         .request-card.process::before { background: #f59e0b; }
         .request-card.accepted::before { background: #22c55e; }
         .request-card.rejected::before { background: #ef4444; }
+        .request-card.emergency {
+            border: 1px solid #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+        .request-card.urgent {
+            border: 1px solid #f59e0b;
+        }
         
         .request-header {
             display: flex;
@@ -240,12 +253,33 @@
             font-weight: 600;
             text-transform: uppercase;
         }
-        .kat-bug { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-        .kat-fitur { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
-        .kat-pertanyaan { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        .kat-lainnya { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+        .kat-cosplay { background: rgba(236, 72, 153, 0.2); color: #ec4899; }
+        .kat-tobrut { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+        .kat-post-biasa { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
+        .kat-serah-owner { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
         
         .request-author { font-weight: 600; margin-bottom: 0.3rem; }
+        .request-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .request-whatsapp {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: #22c55e;
+        }
+        .request-priority {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .priority-emergency { color: #ef4444; }
+        .priority-urgent { color: #f59e0b; }
+        .priority-normal { color: #22c55e; }
         .request-preview {
             color: #7a7a9d;
             font-size: 0.9rem;
@@ -275,6 +309,37 @@
         .status-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
         
         .empty { text-align: center; padding: 3rem; color: #7a7a9d; }
+        
+        .user-list { display: grid; gap: 0.8rem; }
+        .user-card {
+            background: #151520;
+            border: 1px solid #2a2a3c;
+            border-radius: 10px;
+            padding: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-info h4 { margin-bottom: 0.3rem; }
+        .user-info p {
+            font-size: 0.85rem;
+            color: #7a7a9d;
+        }
+        .user-stats {
+            display: flex;
+            gap: 1rem;
+            text-align: center;
+        }
+        .user-stat .value {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #6366f1;
+        }
+        .user-stat .label {
+            font-size: 0.7rem;
+            color: #7a7a9d;
+        }
         
         .modal {
             display: none;
@@ -328,6 +393,7 @@
             border-bottom: 1px solid #2a2a3c;
         }
         .detail-row .label { color: #7a7a9d; font-size: 0.9rem; }
+        .detail-row .value { display: flex; align-items: center; gap: 0.5rem; }
         .detail-message { margin-top: 1rem; }
         .detail-message .label {
             display: block;
@@ -398,7 +464,7 @@
                 <span class="logo">🛠️</span>
                 <div>
                     <h1>Dev Dashboard</h1>
-                    <span class="version">v0.0.8</span>
+                    <span class="version">v0.2.1</span>
                 </div>
             </div>
 
@@ -418,6 +484,9 @@
                 <a href="#" class="nav-link" data-filter="rejected" onclick="setFilter('rejected', this)">
                     <span>❌</span> Ditolak
                 </a>
+                <a href="#" class="nav-link" onclick="showTab('users', this)">
+                    <span>👥</span> Users
+                </a>
             </nav>
 
             <div class="sidebar-footer">
@@ -432,7 +501,7 @@
         <main class="main">
             <header class="topbar">
                 <div class="search">
-                    <input type="text" id="searchInput" placeholder="🔍 Cari request..." oninput="search(this.value)">
+                    <input type="text" id="searchInput" placeholder="🔍 Cari..." oninput="search(this.value)">
                 </div>
                 <button class="btn btn-icon" onclick="refresh()" title="Refresh">🔄</button>
             </header>
@@ -456,19 +525,31 @@
                 </div>
             </div>
 
-            <div class="content">
+            <div class="content" id="requestsContent">
                 <div class="content-header">
                     <h2 id="pageTitle">Semua Request</h2>
                     <div class="filters">
                         <button class="chip active" onclick="setCategory('all', this)">Semua</button>
-                        <button class="chip" onclick="setCategory('bug', this)">🐛 Bug</button>
-                        <button class="chip" onclick="setCategory('fitur', this)">✨ Fitur</button>
-                        <button class="chip" onclick="setCategory('pertanyaan', this)">❓ Tanya</button>
+                        <button class="chip" onclick="setCategory('cosplay', this)">🎭 Cosplay</button>
+                        <button class="chip" onclick="setCategory('Tobrut', this)">🔥 Tobrut</button>
+                        <button class="chip" onclick="setCategory('Post Biasa', this)">📝 Post</button>
+                        <button class="chip" onclick="setCategory('Serah Owner', this)">🎲 Serah</button>
+                        <button class="chip" onclick="setPriorityFilter('emergency', this)" style="color:#ef4444">🔴 Emergency</button>
                     </div>
                 </div>
 
                 <div id="requestList" class="request-list">
                     <div class="empty">Memuat data...</div>
+                </div>
+            </div>
+
+            <div class="content hidden" id="usersContent">
+                <div class="content-header">
+                    <h2>👥 Daftar Users</h2>
+                    <span id="userCount" style="color:#7a7a9d">0 users</span>
+                </div>
+                <div id="userList" class="user-list">
+                    <div class="empty">Memuat users...</div>
                 </div>
             </div>
         </main>
@@ -477,7 +558,7 @@
     <div id="modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Request #<span id="modal-id">-</span></h3>
+                <h3>Request <span id="modal-id">-</span></h3>
                 <button class="btn-close" onclick="closeModal()">&times;</button>
             </div>
             
@@ -487,8 +568,19 @@
                     <span class="value" id="modal-nama">-</span>
                 </div>
                 <div class="detail-row">
+                    <span class="label">WhatsApp</span>
+                    <span class="value">
+                        <span id="modal-whatsapp">-</span>
+                        <button class="btn btn-whatsapp btn-small" onclick="openWhatsApp()" title="Chat WhatsApp">💬 Chat</button>
+                    </span>
+                </div>
+                <div class="detail-row">
                     <span class="label">Kategori</span>
                     <span class="value" id="modal-kategori">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Prioritas</span>
+                    <span class="value" id="modal-prioritas">-</span>
                 </div>
                 <div class="detail-row">
                     <span class="label">Waktu</span>
@@ -520,22 +612,22 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        // CONFIG - SAMAKAN DENGAN USER PORTAL
         const CONFIG = {
-            JSONBIN_API_KEY: '$2a$10$YT5UJTna75CaB4t2bapTruk0NBMykTuUkmhYcPTCHLOlFYL9Oneoy', // GANTI INI!
-            JSONBIN_BIN_ID: '6982f690d0ea881f409f86a3', // GANTI INI!
+            JSONBIN_API_KEY: '$2a$10$YT5UJTna75CaB4t2bapTruk0NBMykTuUkmhYcPTCHLOlFYL9Oneoy',
+            JSONBIN_BIN_ID: '6982f690d0ea881f409f86a3',
             API_URL: 'https://api.jsonbin.io/v3/b'
         };
 
-        let requests = [];
+        let data = { requests: [], users: [] };
         let currentFilter = 'all';
         let currentCat = 'all';
+        let currentPriority = 'all';
         let searchQuery = '';
         let selectedId = null;
         let isOnline = false;
         let lastRequestCount = 0;
+        let currentTab = 'requests';
 
-        // API Functions
         async function fetchFromCloud() {
             try {
                 const response = await fetch(`${CONFIG.API_URL}/${CONFIG.JSONBIN_BIN_ID}/latest`, {
@@ -547,17 +639,16 @@
                 const result = await response.json();
                 isOnline = true;
                 updateStatusBox(true);
-                return result.record?.requests || [];
+                return result.record || { requests: [], users: [] };
             } catch (e) {
                 console.error('Cloud fetch failed:', e);
                 isOnline = false;
                 updateStatusBox(false);
-                // Fallback localStorage
-                return JSON.parse(localStorage.getItem('requests_cache') || '[]');
+                return JSON.parse(localStorage.getItem('app_data') || '{"requests":[], "users":[]}');
             }
         }
 
-        async function saveToCloud(requests) {
+        async function saveToCloud(data) {
             try {
                 const response = await fetch(`${CONFIG.API_URL}/${CONFIG.JSONBIN_BIN_ID}`, {
                     method: 'PUT',
@@ -565,22 +656,20 @@
                         'Content-Type': 'application/json',
                         'X-Master-Key': CONFIG.JSONBIN_API_KEY
                     },
-                    body: JSON.stringify({ requests })
+                    body: JSON.stringify(data)
                 });
                 
                 if (!response.ok) throw new Error('Save failed');
                 
                 isOnline = true;
                 updateStatusBox(true);
-                localStorage.setItem('requests_cache', JSON.stringify(requests));
+                localStorage.setItem('app_data', JSON.stringify(data));
                 return true;
             } catch (e) {
                 console.error('Cloud save failed:', e);
                 isOnline = false;
                 updateStatusBox(false);
-                // Simpan ke localStorage untuk sync nanti
-                localStorage.setItem('requests_cache', JSON.stringify(requests));
-                localStorage.setItem('pending_sync', 'true');
+                localStorage.setItem('app_data', JSON.stringify(data));
                 return false;
             }
         }
@@ -596,21 +685,19 @@
             }
         }
 
-        // Main Functions
         async function loadData() {
-            const newRequests = await fetchFromCloud();
+            data = await fetchFromCloud();
             
-            // Cek request baru
-            if (newRequests.length > lastRequestCount && lastRequestCount > 0) {
-                const newCount = newRequests.length - lastRequestCount;
+            if (data.requests.length > lastRequestCount && lastRequestCount > 0) {
+                const newCount = data.requests.length - lastRequestCount;
                 showToast(`🆕 ${newCount} request baru masuk!`);
             }
             
-            requests = newRequests;
-            lastRequestCount = requests.length;
+            lastRequestCount = data.requests.length;
             
             updateStats();
-            render();
+            if (currentTab === 'requests') renderRequests();
+            else if (currentTab === 'users') renderUsers();
         }
 
         async function syncData() {
@@ -621,12 +708,12 @@
 
         function updateStats() {
             const stats = {
-                total: requests.length,
-                pending: requests.filter(r => r.status === 'pending').length,
-                process: requests.filter(r => r.status === 'process').length,
-                accepted: requests.filter(r => r.status === 'accepted').length,
-                rejected: requests.filter(r => r.status === 'rejected').length,
-                new: requests.filter(r => {
+                total: data.requests.length,
+                pending: data.requests.filter(r => r.status === 'pending').length,
+                process: data.requests.filter(r => r.status === 'process').length,
+                accepted: data.requests.filter(r => r.status === 'accepted').length,
+                rejected: data.requests.filter(r => r.status === 'rejected').length,
+                new: data.requests.filter(r => {
                     const created = new Date(r.createdAt);
                     const now = new Date();
                     return (now - created) < (24 * 60 * 60 * 1000);
@@ -644,25 +731,52 @@
 
         function setFilter(filter, el) {
             currentFilter = filter;
+            currentTab = 'requests';
+            showContent('requests');
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             el.classList.add('active');
-            render();
+            renderRequests();
+        }
+
+        function showTab(tab, el) {
+            currentTab = tab;
+            showContent(tab);
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            if (el) el.classList.add('active');
+            
+            if (tab === 'users') renderUsers();
+        }
+
+        function showContent(content) {
+            document.getElementById('requestsContent').classList.add('hidden');
+            document.getElementById('usersContent').classList.add('hidden');
+            document.getElementById(content + 'Content').classList.remove('hidden');
         }
 
         function setCategory(cat, el) {
             currentCat = cat;
+            currentPriority = 'all';
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
             el.classList.add('active');
-            render();
+            renderRequests();
+        }
+
+        function setPriorityFilter(priority, el) {
+            currentPriority = priority;
+            currentCat = 'all';
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            renderRequests();
         }
 
         function search(query) {
             searchQuery = query.toLowerCase();
-            render();
+            if (currentTab === 'requests') renderRequests();
+            else if (currentTab === 'users') renderUsers();
         }
 
         function getFilteredRequests() {
-            let result = [...requests];
+            let result = [...data.requests];
 
             if (currentFilter !== 'all') {
                 result = result.filter(r => r.status === currentFilter);
@@ -672,18 +786,28 @@
                 result = result.filter(r => r.kategori === currentCat);
             }
 
+            if (currentPriority !== 'all') {
+                result = result.filter(r => r.prioritas === currentPriority);
+            }
+
             if (searchQuery) {
                 result = result.filter(r => 
                     r.nama.toLowerCase().includes(searchQuery) ||
                     r.pesan.toLowerCase().includes(searchQuery) ||
-                    r.id.toString().includes(searchQuery)
+                    r.id.toLowerCase().includes(searchQuery) ||
+                    (r.whatsapp && r.whatsapp.includes(searchQuery))
                 );
             }
 
-            return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            return result.sort((a, b) => {
+                const priorityWeight = { emergency: 3, urgent: 2, normal: 1 };
+                const pDiff = (priorityWeight[b.prioritas] || 1) - (priorityWeight[a.prioritas] || 1);
+                if (pDiff !== 0) return pDiff;
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
         }
 
-        function render() {
+        function renderRequests() {
             const filtered = getFilteredRequests();
             const container = document.getElementById('requestList');
             
@@ -702,13 +826,25 @@
                 return;
             }
 
+            const priorityEmoji = {
+                normal: '🟢',
+                urgent: '🟡',
+                emergency: '🔴'
+            };
+
             container.innerHTML = filtered.map(req => `
-                <div class="request-card ${req.status}" onclick="openModal(${req.id})">
+                <div class="request-card ${req.status} ${req.prioritas || 'normal'}" onclick="openModal('${req.id}')">
                     <div class="request-header">
-                        <span class="request-id">#${req.id}</span>
-                        <span class="kategori-badge kat-${req.kategori}">${req.kategori}</span>
+                        <span class="request-id">${req.id}</span>
+                        <span class="kategori-badge kat-${req.kategori.toLowerCase().replace(' ', '-')}">${req.kategori}</span>
                     </div>
                     <div class="request-author">${escapeHtml(req.nama)}</div>
+                    <div class="request-meta">
+                        <span class="request-whatsapp">📱 ${escapeHtml(req.whatsapp || '-')}</span>
+                        <span class="request-priority priority-${req.prioritas || 'normal'}">
+                            ${priorityEmoji[req.prioritas] || '🟢'} ${(req.prioritas || 'normal').toUpperCase()}
+                        </span>
+                    </div>
                     <div class="request-preview">${escapeHtml(req.pesan)}</div>
                     <div class="request-footer">
                         <span class="status-badge status-${req.status}">${getStatusLabel(req.status)}</span>
@@ -720,14 +856,69 @@
             `).join('');
         }
 
+        function renderUsers() {
+            let users = data.users || [];
+            
+            if (searchQuery) {
+                users = users.filter(u => 
+                    u.nama.toLowerCase().includes(searchQuery) ||
+                    u.whatsapp.includes(searchQuery)
+                );
+            }
+            
+            document.getElementById('userCount').textContent = `${users.length} users`;
+            const container = document.getElementById('userList');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<div class="empty">Tidak ada users</div>';
+                return;
+            }
+
+            container.innerHTML = users.sort((a, b) => b.requestCount - a.requestCount).map(user => {
+                const userRequests = data.requests.filter(r => r.userId === user.id);
+                const pending = userRequests.filter(r => r.status === 'pending').length;
+                const accepted = userRequests.filter(r => r.status === 'accepted').length;
+                
+                return `
+                <div class="user-card">
+                    <div class="user-info">
+                        <h4>${escapeHtml(user.nama)}</h4>
+                        <p>📱 ${escapeHtml(user.whatsapp)} | Terakhir: ${new Date(user.lastActive).toLocaleDateString('id-ID')}</p>
+                    </div>
+                    <div class="user-stats">
+                        <div class="user-stat">
+                            <span class="value">${user.requestCount}</span>
+                            <span class="label">Total</span>
+                        </div>
+                        <div class="user-stat">
+                            <span class="value" style="color:#f59e0b">${pending}</span>
+                            <span class="label">Pending</span>
+                        </div>
+                        <div class="user-stat">
+                            <span class="value" style="color:#22c55e">${accepted}</span>
+                            <span class="label">Done</span>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
         function openModal(id) {
             selectedId = id;
-            const req = requests.find(r => r.id == id);
+            const req = data.requests.find(r => r.id === id);
             if (!req) return;
+
+            const priorityEmoji = {
+                normal: '🟢 Normal',
+                urgent: '🟡 Urgent',
+                emergency: '🔴 Emergency'
+            };
 
             document.getElementById('modal-id').textContent = req.id;
             document.getElementById('modal-nama').textContent = req.nama;
+            document.getElementById('modal-whatsapp').textContent = req.whatsapp || '-';
             document.getElementById('modal-kategori').textContent = req.kategori.toUpperCase();
+            document.getElementById('modal-prioritas').textContent = priorityEmoji[req.prioritas] || '🟢 Normal';
             document.getElementById('modal-waktu').textContent = new Date(req.createdAt).toLocaleString('id-ID');
             document.getElementById('modal-pesan').textContent = req.pesan;
 
@@ -739,15 +930,23 @@
             selectedId = null;
         }
 
+        function openWhatsApp() {
+            const req = data.requests.find(r => r.id === selectedId);
+            if (req && req.whatsapp) {
+                const waUrl = `https://wa.me/${req.whatsapp}`;
+                window.open(waUrl, '_blank');
+            }
+        }
+
         async function updateStatus(status) {
             if (!selectedId) return;
 
-            const index = requests.findIndex(r => r.id == selectedId);
+            const index = data.requests.findIndex(r => r.id === selectedId);
             if (index !== -1) {
-                requests[index].status = status;
-                requests[index].updatedAt = new Date().toISOString();
+                data.requests[index].status = status;
+                data.requests[index].updatedAt = new Date().toISOString();
                 
-                const saved = await saveToCloud(requests);
+                const saved = await saveToCloud(data);
                 
                 if (saved || !isOnline) {
                     loadData();
@@ -762,8 +961,8 @@
         async function deleteRequest() {
             if (!selectedId || !confirm('Yakin hapus request ini?')) return;
 
-            requests = requests.filter(r => r.id != selectedId);
-            const saved = await saveToCloud(requests);
+            data.requests = data.requests.filter(r => r.id !== selectedId);
+            const saved = await saveToCloud(data);
             
             loadData();
             closeModal();
@@ -771,10 +970,10 @@
         }
 
         async function clearAll() {
-            if (!confirm('Hapus SEMUA request?')) return;
+            if (!confirm('Hapus SEMUA data?')) return;
             
-            requests = [];
-            await saveToCloud(requests);
+            data = { requests: [], users: [] };
+            await saveToCloud(data);
             loadData();
             showToast('🗑️ Semua data dihapus', 'error');
         }
@@ -808,10 +1007,7 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // Auto refresh tiap 5 detik
         setInterval(loadData, 5000);
-
-        // Init
         loadData();
     </script>
 </body>
