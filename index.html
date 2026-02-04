@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Dashboard v0.2.1</title>
+    <title>Dev Dashboard v0.2.2</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -319,8 +319,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.2s;
         }
-        .user-info h4 { margin-bottom: 0.3rem; }
+        .user-card:hover {
+            border-color: #6366f1;
+            transform: translateX(4px);
+        }
+        .user-info h4 { margin-bottom: 0.3rem; color: #e2e2f0; }
         .user-info p {
             font-size: 0.85rem;
             color: #7a7a9d;
@@ -338,6 +343,16 @@
         }
         .user-stat .label {
             font-size: 0.7rem;
+            color: #7a7a9d;
+        }
+        
+        .debug-info {
+            background: #0a0a0f;
+            border: 1px solid #2a2a3c;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.8rem;
             color: #7a7a9d;
         }
         
@@ -464,7 +479,7 @@
                 <span class="logo">🛠️</span>
                 <div>
                     <h1>Dev Dashboard</h1>
-                    <span class="version">v0.2.1</span>
+                    <span class="version">v0.2.2</span>
                 </div>
             </div>
 
@@ -485,7 +500,7 @@
                     <span>❌</span> Ditolak
                 </a>
                 <a href="#" class="nav-link" onclick="showTab('users', this)">
-                    <span>👥</span> Users
+                    <span>👥</span> Users <span class="badge" id="badge-users">0</span>
                 </a>
             </nav>
 
@@ -506,7 +521,7 @@
                 <button class="btn btn-icon" onclick="refresh()" title="Refresh">🔄</button>
             </header>
 
-            <div class="stats-bar">
+            <div class="stats-bar" id="requestsStats">
                 <div class="stat-box highlight">
                     <span class="value" id="stat-new">0</span>
                     <span class="label">Baru (24j)</span>
@@ -546,7 +561,10 @@
             <div class="content hidden" id="usersContent">
                 <div class="content-header">
                     <h2>👥 Daftar Users</h2>
-                    <span id="userCount" style="color:#7a7a9d">0 users</span>
+                    <button class="btn btn-primary btn-small" onclick="forceRefreshUsers()">🔄 Refresh Users</button>
+                </div>
+                <div class="debug-info" id="debugInfo">
+                    Memuat data users...
                 </div>
                 <div id="userList" class="user-list">
                     <div class="empty">Memuat users...</div>
@@ -639,12 +657,23 @@
                 const result = await response.json();
                 isOnline = true;
                 updateStatusBox(true);
-                return result.record || { requests: [], users: [] };
+                
+                // Pastikan structure data benar
+                const record = result.record || {};
+                return {
+                    requests: record.requests || [],
+                    users: record.users || []
+                };
             } catch (e) {
                 console.error('Cloud fetch failed:', e);
                 isOnline = false;
                 updateStatusBox(false);
-                return JSON.parse(localStorage.getItem('app_data') || '{"requests":[], "users":[]}');
+                // Fallback localStorage
+                const local = JSON.parse(localStorage.getItem('app_data') || '{"requests":[], "users":[]}');
+                return {
+                    requests: local.requests || [],
+                    users: local.users || []
+                };
             }
         }
 
@@ -686,7 +715,11 @@
         }
 
         async function loadData() {
+            console.log('Loading data...');
             data = await fetchFromCloud();
+            console.log('Data loaded:', data);
+            console.log('Users count:', data.users ? data.users.length : 0);
+            console.log('Requests count:', data.requests ? data.requests.length : 0);
             
             if (data.requests.length > lastRequestCount && lastRequestCount > 0) {
                 const newCount = data.requests.length - lastRequestCount;
@@ -696,6 +729,7 @@
             lastRequestCount = data.requests.length;
             
             updateStats();
+            
             if (currentTab === 'requests') renderRequests();
             else if (currentTab === 'users') renderUsers();
         }
@@ -717,12 +751,14 @@
                     const created = new Date(r.createdAt);
                     const now = new Date();
                     return (now - created) < (24 * 60 * 60 * 1000);
-                }).length
+                }).length,
+                users: data.users.length
             };
 
             document.getElementById('badge-all').textContent = stats.total;
             document.getElementById('badge-pending').textContent = stats.pending;
             document.getElementById('badge-process').textContent = stats.process;
+            document.getElementById('badge-users').textContent = stats.users;
             document.getElementById('stat-new').textContent = stats.new;
             document.getElementById('stat-total').textContent = stats.total;
             document.getElementById('stat-pending').textContent = stats.pending;
@@ -744,13 +780,24 @@
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             if (el) el.classList.add('active');
             
-            if (tab === 'users') renderUsers();
+            if (tab === 'users') {
+                console.log('Switching to users tab, data:', data.users);
+                renderUsers();
+            }
         }
 
         function showContent(content) {
             document.getElementById('requestsContent').classList.add('hidden');
             document.getElementById('usersContent').classList.add('hidden');
+            document.getElementById('requestsStats').style.display = content === 'requests' ? 'flex' : 'none';
             document.getElementById(content + 'Content').classList.remove('hidden');
+        }
+
+        async function forceRefreshUsers() {
+            showToast('🔄 Refreshing users...');
+            await loadData();
+            renderUsers();
+            showToast(`✅ ${data.users.length} users loaded`);
         }
 
         function setCategory(cat, el) {
@@ -857,6 +904,16 @@
         }
 
         function renderUsers() {
+            console.log('Rendering users:', data.users);
+            
+            // Update debug info
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.innerHTML = `
+                Total Users: ${data.users ? data.users.length : 0} | 
+                Online: ${isOnline ? 'Yes' : 'No'} | 
+                Last Update: ${new Date().toLocaleTimeString()}
+            `;
+            
             let users = data.users || [];
             
             if (searchQuery) {
@@ -866,28 +923,34 @@
                 );
             }
             
-            document.getElementById('userCount').textContent = `${users.length} users`;
             const container = document.getElementById('userList');
             
             if (users.length === 0) {
-                container.innerHTML = '<div class="empty">Tidak ada users</div>';
+                container.innerHTML = `
+                    <div class="empty">
+                        <p>Belum ada users</p>
+                        <p style="font-size:0.8rem;margin-top:0.5rem">Users akan muncul setelah ada yang submit request</p>
+                    </div>
+                `;
                 return;
             }
 
-            container.innerHTML = users.sort((a, b) => b.requestCount - a.requestCount).map(user => {
-                const userRequests = data.requests.filter(r => r.userId === user.id);
+            container.innerHTML = users.sort((a, b) => (b.requestCount || 0) - (a.requestCount || 0)).map(user => {
+                const userRequests = data.requests.filter(r => r.userId === user.id || r.whatsapp === user.whatsapp);
                 const pending = userRequests.filter(r => r.status === 'pending').length;
                 const accepted = userRequests.filter(r => r.status === 'accepted').length;
+                const total = userRequests.length || user.requestCount || 0;
                 
                 return `
                 <div class="user-card">
                     <div class="user-info">
                         <h4>${escapeHtml(user.nama)}</h4>
-                        <p>📱 ${escapeHtml(user.whatsapp)} | Terakhir: ${new Date(user.lastActive).toLocaleDateString('id-ID')}</p>
+                        <p>📱 ${escapeHtml(user.whatsapp)}</p>
+                        <p style="font-size:0.75rem;margin-top:0.3rem">Bergabung: ${new Date(user.createdAt).toLocaleDateString('id-ID')}</p>
                     </div>
                     <div class="user-stats">
                         <div class="user-stat">
-                            <span class="value">${user.requestCount}</span>
+                            <span class="value">${total}</span>
                             <span class="label">Total</span>
                         </div>
                         <div class="user-stat">
@@ -1007,6 +1070,7 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
+        // Init
         setInterval(loadData, 5000);
         loadData();
     </script>
